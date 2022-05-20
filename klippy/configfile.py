@@ -351,7 +351,7 @@ class PrinterConfig:
                     msg = ("SAVE_CONFIG section '%s' option '%s' conflicts "
                            "with included value" % (section, option))
                     raise gcode.error(msg)
-    cmd_SAVE_CONFIG_help = "Overwrite config file and restart"
+    cmd_SAVE_CONFIG_help = "Overwrite config file and restart use NO_RESTART=1 to only save"
     def cmd_SAVE_CONFIG(self, gcmd):
         if not self.autosave.fileconfig.sections():
             return
@@ -396,5 +396,12 @@ class PrinterConfig:
             msg = "Unable to write config file during SAVE_CONFIG"
             logging.exception(msg)
             raise gcode.error(msg)
-        # Request a restart
-        gcode.request_restart('restart')
+        # If requested restart or no restart just flag config saved
+        restartTest = gcmd.get_int('NO_RESTART', None)
+        if restartTest is None or restartTest != 1:
+            # Request a restart
+            gcode.request_restart('restart')
+        else:
+            # flag config updated to false since config saved with no restart
+            self.save_config_pending = False
+            gcode.respond_info("Config File update without restart sucessful")
